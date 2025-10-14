@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>库存管理系统</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #f8f9fa;
+            --dark: #343a40;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            display: flex;
+        }
+        
+        /* 左侧提示面板样式 */
+        .tips-panel {
+            width: 280px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .tips-panel h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+        }
+        
+        .tips-panel h2 i {
+            margin-right: 10px;
+            font-size: 24px;
+        }
+        
+        .tips-list {
+            list-style: none;
+        }
+        
+        .tips-list li {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid var(--warning);
+        }
+        
+        .tips-list li:nth-child(2) {
+            border-left-color: var(--danger);
+        }
+        
+        .tips-list li:nth-child(3) {
+            border-left-color: var(--danger);
+        }
+        
+        .tips-list li:nth-child(4) {
+            border-left-color: var(--primary);
+        }
+        
+        .tip-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .tip-title i {
+            margin-right: 8px;
+        }
+        
+        .tip-content {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            margin-left: 280px;
+            flex: 1;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), #2980b9);
+            color: white;
+            padding: 20px 0;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 25px;
+            border-radius: 8px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            color: var(--primary);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+            font-weight: 500;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .search-bar {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        
+        .search-bar input {
+            flex: 1;
+        }
+        
+        .date-range {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: flex-end;
+        }
+        
+        .date-range .form-group {
+            margin-bottom: 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+        
+        .pagination-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .alert {
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .alert-danger {
+            background-color: rgba(231, 76, 60, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+        
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+        
+        .alert-warning {
+            background-color: rgba(243, 156, 18, 0.1);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .clear-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .clear-form {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        
+        .clear-form .form-group {
+            flex: 1;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .close-btn:hover {
+            color: var(--danger);
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .stats {
+                width: 100%;
+                justify-content: space-around;
+            }
+            
+            .clear-form {
+                flex-direction: column;
+            }
+            
+            .date-range {
+                flex-direction: column;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+            
+            .tips-panel {
+                display: none;
+            }
+            
+            .container {
+                margin-left: 0;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <!-- 左侧提示面板 -->
+    <div class="tips-panel">
+        <h2><i class="fas fa-lightbulb"></i> 操作提示</h2>
+        <ul class="tips-list">
+            <li>
+                <div class="tip-title"><i class="fas fa-calendar-check"></i> 提示 1</div>
+                <div class="tip-content">商品入库出库时请检查好出入库的日期时间，如果不对请手动选择调整为正确的时间。</div>
+            </li>
+            <li>
+                <div class="tip-title"><i class="fas fa-exclamation-triangle"></i> 提示 2</div>
+                <div class="tip-content">一旦任意商品进行了出库的操作，请勿再修改该商品出库操作时间前的入库信息，若要修改，请联系相关负责人进行调整。如不按照规定，出现问题将进行追责。<br><br>（假设你在10月1日前入库了A商品，10月1日后出库了部分A商品。发现10月1日前A商品的入库信息填写有误时，请勿更改10月1日前的入库信息）</div>
+            </li>
+            <li>
+                <div class="tip-title"><i class="fas fa-trash-alt"></i> 提示 3</div>
+                <div class="tip-content">任何删除商品信息的操作请提前告知负责人员，允许通过后再进行删除操作，否则出现问题将进行追责。</div>
+            </li>
+            <li>
+                <div class="tip-title"><i class="fas fa-edit"></i> 提示 4</div>
+                <div class="tip-content">更改出库信息请联系相关负责人员。</div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <!-- 全局提示区域 - 放在最上方 -->
+        <div id="globalAlertContainer"></div>
+        
+        <header>
+            <div class="header-content">
+                <h1>库存管理系统</h1>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="productCount">0</div>
+                        <div class="stat-label">商品种类</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalValue">¥0.00</div>
+                        <div class="stat-label">库存总价值</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="section">
+            <h2 class="section-title">商品录入</h2>
+            <form id="productForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="productCode">商品编码 *</label>
+                        <input type="text" id="productCode" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="productName">商品名称 *</label>
+                        <input type="text" id="productName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="productCategory">分类 *</label>
+                        <input type="text" id="productCategory" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="productUnit">单位 *</label>
+                        <input type="text" id="productUnit" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">录入商品</button>
+            </form>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">库存操作</h2>
+            <div class="tabs">
+                <div class="tab active" data-tab="inbound">入库</div>
+                <div class="tab" data-tab="outbound">出库</div>
+            </div>
+            
+            <div class="tab-content active" id="inboundTab">
+                <form id="inboundForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="inboundDatetime">入库日期时间 *</label>
+                            <input type="datetime-local" id="inboundDatetime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inboundCode">商品编码 *</label>
+                            <input type="text" id="inboundCode" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inboundName">商品名称 *</label>
+                            <input type="text" id="inboundName" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="inboundQuantity">入库数量 *</label>
+                            <input type="number" id="inboundQuantity" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inboundPrice">入库单价 *</label>
+                            <input type="number" id="inboundPrice" min="0.01" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inboundOperator">操作人员 *</label>
+                            <input type="text" id="inboundOperator" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">确认入库</button>
+                </form>
+            </div>
+            
+            <div class="tab-content" id="outboundTab">
+                <form id="outboundForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="outboundDatetime">出库日期时间 *</label>
+                            <input type="datetime-local" id="outboundDatetime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="outboundCode">商品编码 *</label>
+                            <input type="text" id="outboundCode" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="outboundName">商品名称 *</label>
+                            <input type="text" id="outboundName" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="outboundQuantity">出库数量 *</label>
+                            <input type="number" id="outboundQuantity" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="outboundReceiver">接收人员 *</label>
+                            <input type="text" id="outboundReceiver" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="outboundOperator">操作人员 *</label>
+                            <input type="text" id="outboundOperator" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">确认出库</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">库存列表</h2>
+            <div class="search-bar">
+                <input type="text" id="inventorySearch" placeholder="输入商品编码、名称或分类搜索">
+                <button class="btn btn-primary" id="searchInventory">搜索</button>
+                <button class="btn btn-success" id="exportInventory">导出当前页</button>
+            </div>
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>商品编码</th>
+                        <th>商品名称</th>
+                        <th>分类</th>
+                        <th>单位</th>
+                        <th>单价</th>
+                        <th>库存数量</th>
+                        <th>库存总价值</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryBody">
+                    <!-- 库存数据将在这里动态生成 -->
+                </tbody>
+            </table>
+            <div class="pagination">
+                <div>第 <span id="inventoryCurrentPage">1</span> 页，共 <span id="inventoryTotalPages">1</span> 页</div>
+                <div class="pagination-controls">
+                    <button class="btn" id="inventoryPrevPage">上一页</button>
+                    <button class="btn" id="inventoryNextPage">下一页</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">出入库记录</h2>
+            <div class="tabs">
+                <div class="tab active" data-tab="inboundRecords">入库记录</div>
+                <div class="tab" data-tab="outboundRecords">出库记录</div>
+            </div>
+            
+            <div class="tab-content active" id="inboundRecordsTab">
+                <div class="date-range">
+                    <div class="form-group">
+                        <label for="inboundStartDate">开始日期</label>
+                        <input type="date" id="inboundStartDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="inboundEndDate">结束日期</label>
+                        <input type="date" id="inboundEndDate">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary" id="resetInboundDates">重置日期</button>
+                    </div>
+                </div>
+                <div class="search-bar">
+                    <input type="text" id="inboundSearch" placeholder="输入商品编码搜索">
+                    <button class="btn btn-primary" id="searchInbound">搜索</button>
+                    <button class="btn btn-success" id="exportInbound">导出当前页</button>
+                </div>
+                <table id="inboundTable">
+                    <thead>
+                        <tr>
+                            <th>入库日期时间</th>
+                            <th>商品编码</th>
+                            <th>商品名称</th>
+                            <th>入库数量</th>
+                            <th>入库单价</th>
+                            <th>总金额</th>
+                            <th>操作人员</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inboundBody">
+                        <!-- 入库记录将在这里动态生成 -->
+                    </tbody>
+                </table>
+                <div class="pagination">
+                    <div>第 <span id="inboundCurrentPage">1</span> 页，共 <span id="inboundTotalPages">1</span> 页</div>
+                    <div class="pagination-controls">
+                        <button class="btn" id="inboundPrevPage">上一页</button>
+                        <button class="btn" id="inboundNextPage">下一页</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="outboundRecordsTab">
+                <div class="date-range">
+                    <div class="form-group">
+                        <label for="outboundStartDate">开始日期</label>
+                        <input type="date" id="outboundStartDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="outboundEndDate">结束日期</label>
+                        <input type="date" id="outboundEndDate">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary" id="resetOutboundDates">重置日期</button>
+                    </div>
+                </div>
+                <div class="search-bar">
+                    <input type="text" id="outboundSearch" placeholder="输入商品编码搜索">
+                    <button class="btn btn-primary" id="searchOutbound">搜索</button>
+                    <button class="btn btn-success" id="exportOutbound">导出当前页</button>
+                </div>
+                <table id="outboundTable">
+                    <thead>
+                        <tr>
+                            <th>出库日期时间</th>
+                            <th>商品编码</th>
+                            <th>商品名称</th>
+                            <th>出库数量</th>
+                            <th>总金额</th>
+                            <th>接收人员</th>
+                            <th>操作人员</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="outboundBody">
+                        <!-- 出库记录将在这里动态生成 -->
+                    </tbody>
+                </table>
+                <div class="pagination">
+                    <div>第 <span id="outboundCurrentPage">1</span> 页，共 <span id="outboundTotalPages">1</span> 页</div>
+                    <div class="pagination-controls">
+                        <button class="btn" id="outboundPrevPage">上一页</button>
+                        <button class="btn" id="outboundNextPage">下一页</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">商品删除</h2>
+            <form id="deleteForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="deleteCode">商品编码 *</label>
+                        <input type="text" id="deleteCode" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deleteName">商品名称 *</label>
+                        <input type="text" id="deleteName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deleteOperator">操作人员 *</label>
+                        <input type="text" id="deleteOperator" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deletePassword">密码 *</label>
+                        <input type="password" id="deletePassword" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-danger">删除商品及记录</button>
+            </form>
+            
+            <!-- 一键清除所有数据功能 -->
+            <div class="clear-section">
+                <h3 class="section-title" style="color: var(--danger);">一键清除所有数据</h3>
+                <p style="margin-bottom: 15px; color: #666;">
+                    此操作将清除系统中的所有数据，包括商品信息、库存数据和出入库记录。此操作不可逆，请谨慎使用。
+                </p>
+                <div class="clear-form">
+                    <div class="form-group">
+                        <label for="clearPassword">密码 *</label>
+                        <input type="password" id="clearPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="clearOperator">操作人员 *</label>
+                        <input type="text" id="clearOperator" required>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-danger" id="clearAllDataBtn">一键清除所有数据</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 修改入库记录模态框 -->
+    <div class="modal" id="editInboundModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">修改入库记录</h2>
+                <button class="close-btn" id="closeInboundModal">&times;</button>
+            </div>
+            <form id="editInboundForm">
+                <input type="hidden" id="editInboundId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editInboundDatetime">入库日期时间 *</label>
+                        <input type="datetime-local" id="editInboundDatetime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editInboundCode">商品编码 *</label>
+                        <input type="text" id="editInboundCode" required readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="editInboundName">商品名称 *</label>
+                        <input type="text" id="editInboundName" required readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editInboundQuantity">入库数量 *</label>
+                        <input type="number" id="editInboundQuantity" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editInboundPrice">入库单价 *</label>
+                        <input type="number" id="editInboundPrice" min="0.01" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editInboundOperator">操作人员 *</label>
+                        <input type="text" id="editInboundOperator" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <button type="submit" class="btn btn-success">保存修改</button>
+                    <button type="button" class="btn btn-primary" id="cancelInboundEdit">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 修改出库记录模态框 -->
+    <div class="modal" id="editOutboundModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">修改出库记录</h2>
+                <button class="close-btn" id="closeOutboundModal">&times;</button>
+            </div>
+            <form id="editOutboundForm">
+                <input type="hidden" id="editOutboundId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editOutboundDatetime">出库日期时间 *</label>
+                        <input type="datetime-local" id="editOutboundDatetime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editOutboundCode">商品编码 *</label>
+                        <input type="text" id="editOutboundCode" required readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="editOutboundName">商品名称 *</label>
+                        <input type="text" id="editOutboundName" required readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editOutboundQuantity">出库数量 *</label>
+                        <input type="number" id="editOutboundQuantity" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editOutboundReceiver">接收人员 *</label>
+                        <input type="text" id="editOutboundReceiver" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editOutboundOperator">操作人员 *</label>
+                        <input type="text" id="editOutboundOperator" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editOutboundModifier">修改人员 *</label>
+                        <input type="text" id="editOutboundModifier" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editOutboundPassword">密码 *</label>
+                        <input type="password" id="editOutboundPassword" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <button type="submit" class="btn btn-success">保存修改</button>
+                    <button type="button" class="btn btn-primary" id="cancelOutboundEdit">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 数据存储
+        let products = JSON.parse(localStorage.getItem('products')) || [];
+        let inboundRecords = JSON.parse(localStorage.getItem('inboundRecords')) || [];
+        let outboundRecords = JSON.parse(localStorage.getItem('outboundRecords')) || [];
+        let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+
+        // 分页设置
+        const itemsPerPage = 50;
+        let inventoryCurrentPage = 1;
+        let inboundCurrentPage = 1;
+        let outboundCurrentPage = 1;
+
+        // DOM 加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            setupEventListeners();
+            updateStats();
+            renderInventory();
+            renderInboundRecords();
+            renderOutboundRecords();
+        });
+
+        // 初始化应用
+        function initializeApp() {
+            // 设置默认日期时间为当前北京时间
+            setCurrentDateTime('inboundDatetime');
+            setCurrentDateTime('outboundDatetime');
+            
+            // 设置默认查询日期范围为最近30天
+            const today = getBeijingDate();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            document.getElementById('inboundStartDate').value = formatDateForInput(thirtyDaysAgo);
+            document.getElementById('inboundEndDate').value = formatDateForInput(today);
+            document.getElementById('outboundStartDate').value = formatDateForInput(thirtyDaysAgo);
+            document.getElementById('outboundEndDate').value = formatDateForInput(today);
+        }
+
+        // 获取北京时间
+        function getBeijingDate() {
+            // 创建当前时间的Date对象
+            const now = new Date();
+            
+            // 获取本地时间与UTC时间的偏移量（分钟）
+            const localOffset = now.getTimezoneOffset();
+            
+            // 北京时区是UTC+8，所以偏移量是-480分钟
+            const beijingOffset = -480;
+            
+            // 计算与北京时间的差值（分钟）
+            const diff = beijingOffset - localOffset;
+            
+            // 调整时间到北京时间
+            const beijingTime = new Date(now.getTime() + diff * 60000);
+            
+            return beijingTime;
+        }
+
+        // 设置当前日期时间到指定输入框
+        function setCurrentDateTime(elementId) {
+            const beijingTime = getBeijingDate();
+            const formattedDateTime = formatDateTimeForInput(beijingTime);
+            document.getElementById(elementId).value = formattedDateTime;
+        }
+
+        // 格式化日期时间用于输入框（YYYY-MM-DDTHH:mm）
+        function formatDateTimeForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // 格式化日期用于输入框（YYYY-MM-DD）
+        function formatDateForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}`;
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 标签页切换
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // 更新标签页状态
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 更新内容显示
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(tabId + 'Tab').classList.add('active');
+                    
+                    // 如果是入库或出库标签，更新日期时间
+                    if (tabId === 'inbound') {
+                        setCurrentDateTime('inboundDatetime');
+                    } else if (tabId === 'outbound') {
+                        setCurrentDateTime('outboundDatetime');
+                    }
+                });
+            });
+
+            // 表单提交
+            document.getElementById('productForm').addEventListener('submit', handleProductSubmit);
+            document.getElementById('inboundForm').addEventListener('submit', handleInboundSubmit);
+            document.getElementById('outboundForm').addEventListener('submit', handleOutboundSubmit);
+            document.getElementById('deleteForm').addEventListener('submit', handleDeleteSubmit);
+
+            // 搜索功能
+            document.getElementById('searchInventory').addEventListener('click', searchInventory);
+            document.getElementById('searchInbound').addEventListener('click', searchInbound);
+            document.getElementById('searchOutbound').addEventListener('click', searchOutbound);
+
+            // 导出功能
+            document.getElementById('exportInventory').addEventListener('click', exportInventory);
+            document.getElementById('exportInbound').addEventListener('click', exportInbound);
+            document.getElementById('exportOutbound').addEventListener('click', exportOutbound);
+
+            // 分页控制
+            document.getElementById('inventoryPrevPage').addEventListener('click', () => changePage('inventory', -1));
+            document.getElementById('inventoryNextPage').addEventListener('click', () => changePage('inventory', 1));
+            document.getElementById('inboundPrevPage').addEventListener('click', () => changePage('inbound', -1));
+            document.getElementById('inboundNextPage').addEventListener('click', () => changePage('inbound', 1));
+            document.getElementById('outboundPrevPage').addEventListener('click', () => changePage('outbound', -1));
+            document.getElementById('outboundNextPage').addEventListener('click', () => changePage('outbound', 1));
+
+            // 一键清除所有数据
+            document.getElementById('clearAllDataBtn').addEventListener('click', handleClearAllData);
+            
+            // 日期重置按钮
+            document.getElementById('resetInboundDates').addEventListener('click', resetInboundDates);
+            document.getElementById('resetOutboundDates').addEventListener('click', resetOutboundDates);
+
+            // 模态框关闭按钮
+            document.getElementById('closeInboundModal').addEventListener('click', () => {
+                document.getElementById('editInboundModal').style.display = 'none';
+            });
+            document.getElementById('closeOutboundModal').addEventListener('click', () => {
+                document.getElementById('editOutboundModal').style.display = 'none';
+            });
+            document.getElementById('cancelInboundEdit').addEventListener('click', () => {
+                document.getElementById('editInboundModal').style.display = 'none';
+            });
+            document.getElementById('cancelOutboundEdit').addEventListener('click', () => {
+                document.getElementById('editOutboundModal').style.display = 'none';
+            });
+
+            // 修改表单提交
+            document.getElementById('editInboundForm').addEventListener('submit', handleEditInboundSubmit);
+            document.getElementById('editOutboundForm').addEventListener('submit', handleEditOutboundSubmit);
+        }
+
+        // 重置入库记录日期
+        function resetInboundDates() {
+            const today = getBeijingDate();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            document.getElementById('inboundStartDate').value = formatDateForInput(thirtyDaysAgo);
+            document.getElementById('inboundEndDate').value = formatDateForInput(today);
+            
+            // 重新搜索
+            searchInbound();
+        }
+
+        // 重置出库记录日期
+        function resetOutboundDates() {
+            const today = getBeijingDate();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            document.getElementById('outboundStartDate').value = formatDateForInput(thirtyDaysAgo);
+            document.getElementById('outboundEndDate').value = formatDateForInput(today);
+            
+            // 重新搜索
+            searchOutbound();
+        }
+
+        // 处理商品录入
+        function handleProductSubmit(e) {
+            e.preventDefault();
+            
+            const code = document.getElementById('productCode').value.trim();
+            const name = document.getElementById('productName').value.trim();
+            const category = document.getElementById('productCategory').value.trim();
+            const unit = document.getElementById('productUnit').value.trim();
+            
+            // 验证必填项
+            if (!code || !name || !category || !unit) {
+                showGlobalAlert('请填写所有必填项', 'danger');
+                return;
+            }
+            
+            // 检查编码是否已存在
+            if (products.some(product => product.code === code)) {
+                showGlobalAlert('该商品编码已被使用，请使用其他编码', 'danger');
+                return;
+            }
+            
+            // 检查名称是否已存在
+            if (products.some(product => product.name === name)) {
+                showGlobalAlert('该商品名称已被使用，请使用其他名称', 'danger');
+                return;
+            }
+            
+            // 添加商品
+            const newProduct = { code, name, category, unit };
+            products.push(newProduct);
+            localStorage.setItem('products', JSON.stringify(products));
+            
+            // 更新库存
+            const existingInventory = inventory.find(item => item.code === code);
+            if (!existingInventory) {
+                inventory.push({ ...newProduct, quantity: 0, price: 0 });
+                localStorage.setItem('inventory', JSON.stringify(inventory));
+            }
+            
+            // 重置表单
+            document.getElementById('productForm').reset();
+            
+            // 更新显示
+            updateStats();
+            renderInventory();
+            
+            showGlobalAlert('商品录入成功', 'success');
+        }
+
+        // 处理入库操作
+        function handleInboundSubmit(e) {
+            e.preventDefault();
+            
+            const datetime = document.getElementById('inboundDatetime').value;
+            const code = document.getElementById('inboundCode').value.trim();
+            const name = document.getElementById('inboundName').value.trim();
+            const quantity = parseInt(document.getElementById('inboundQuantity').value);
+            const price = parseFloat(document.getElementById('inboundPrice').value);
+            const operator = document.getElementById('inboundOperator').value.trim();
+            
+            // 验证必填项
+            if (!datetime || !code || !name || !quantity || !price || !operator) {
+                showGlobalAlert('请填写所有必填项', 'danger');
+                return;
+            }
+            
+            // 检查商品是否存在
+            const product = products.find(p => p.code === code && p.name === name);
+            if (!product) {
+                showGlobalAlert('商品编码与名称不匹配，请检查', 'danger');
+                return;
+            }
+            
+            // 添加入库记录
+            const total = quantity * price;
+            const record = { 
+                id: generateId(), 
+                datetime, 
+                code, 
+                name, 
+                quantity, 
+                price, 
+                total, 
+                operator 
+            };
+            inboundRecords.push(record);
+            localStorage.setItem('inboundRecords', JSON.stringify(inboundRecords));
+            
+            // 更新库存
+            const inventoryItem = inventory.find(item => item.code === code);
+            if (inventoryItem) {
+                // 计算新的平均价格
+                const totalValue = (inventoryItem.quantity * inventoryItem.price) + total;
+                const totalQuantity = inventoryItem.quantity + quantity;
+                inventoryItem.price = totalValue / totalQuantity;
+                inventoryItem.quantity = totalQuantity;
+            } else {
+                inventory.push({ 
+                    code, 
+                    name, 
+                    category: product.category, 
+                    unit: product.unit, 
+                    quantity, 
+                    price 
+                });
+            }
+            localStorage.setItem('inventory', JSON.stringify(inventory));
+            
+            // 重置表单并更新日期时间
+            document.getElementById('inboundForm').reset();
+            setCurrentDateTime('inboundDatetime');
+            
+            // 更新显示
+            updateStats();
+            renderInventory();
+            renderInboundRecords();
+            
+            showGlobalAlert('入库操作成功', 'success');
+        }
+
+        // 处理出库操作
+        function handleOutboundSubmit(e) {
+            e.preventDefault();
+            
+            const datetime = document.getElementById('outboundDatetime').value;
+            const code = document.getElementById('outboundCode').value.trim();
+            const name = document.getElementById('outboundName').value.trim();
+            const quantity = parseInt(document.getElementById('outboundQuantity').value);
+            const receiver = document.getElementById('outboundReceiver').value.trim();
+            const operator = document.getElementById('outboundOperator').value.trim();
+            
+            // 验证必填项
+            if (!datetime || !code || !name || !quantity || !receiver || !operator) {
+                showGlobalAlert('请填写所有必填项', 'danger');
+                return;
+            }
+            
+            // 检查商品是否存在
+            const product = products.find(p => p.code === code && p.name === name);
+            if (!product) {
+                showGlobalAlert('商品编码与名称不匹配，请检查', 'danger');
+                return;
+            }
+            
+            // 检查库存是否充足
+            const inventoryItem = inventory.find(item => item.code === code);
+            if (!inventoryItem || inventoryItem.quantity < quantity) {
+                showGlobalAlert('库存不足，无法完成出库操作', 'danger');
+                return;
+            }
+            
+            // 计算总金额
+            const total = quantity * inventoryItem.price;
+            
+            // 添加出库记录
+            const record = { 
+                id: generateId(),
+                datetime, 
+                code, 
+                name, 
+                quantity, 
+                total, 
+                receiver, 
+                operator 
+            };
+            outboundRecords.push(record);
+            localStorage.setItem('outboundRecords', JSON.stringify(outboundRecords));
+            
+            // 更新库存
+            inventoryItem.quantity -= quantity;
+            localStorage.setItem('inventory', JSON.stringify(inventory));
+            
+            // 重置表单并更新日期时间
+            document.getElementById('outboundForm').reset();
+            setCurrentDateTime('outboundDatetime');
+            
+            // 更新显示
+            updateStats();
+            renderInventory();
+            renderOutboundRecords();
+            
+            showGlobalAlert('出库操作成功', 'success');
+        }
+
+        // 处理商品删除
+        function handleDeleteSubmit(e) {
+            e.preventDefault();
+            
+            const code = document.getElementById('deleteCode').value.trim();
+            const name = document.getElementById('deleteName').value.trim();
+            const operator = document.getElementById('deleteOperator').value.trim();
+            const password = document.getElementById('deletePassword').value;
+            
+            // 验证必填项
+            if (!code || !name || !operator || !password) {
+                showGlobalAlert('请填写所有必填项', 'danger');
+                return;
+            }
+            
+            // 验证密码
+            if (password !== 'fzj123456') {
+                showGlobalAlert('密码错误，无法删除商品', 'danger');
+                return;
+            }
+            
+            // 检查商品是否存在
+            const productIndex = products.findIndex(p => p.code === code && p.name === name);
+            if (productIndex === -1) {
+                showGlobalAlert('商品编码与名称不匹配，请检查', 'danger');
+                return;
+            }
+            
+            // 确认删除
+            if (!confirm('确定要删除该商品及其所有出入库记录吗？此操作不可撤销！')) {
+                return;
+            }
+            
+            // 删除商品
+            products.splice(productIndex, 1);
+            localStorage.setItem('products', JSON.stringify(products));
+            
+            // 删除库存记录
+            const inventoryIndex = inventory.findIndex(item => item.code === code);
+            if (inventoryIndex !== -1) {
+                inventory.splice(inventoryIndex, 1);
+                localStorage.setItem('inventory', JSON.stringify(inventory));
+            }
+            
+            // 删除出入库记录
+            inboundRecords = inboundRecords.filter(record => record.code !== code);
+            outboundRecords = outboundRecords.filter(record => record.code !== code);
+            localStorage.setItem('inboundRecords', JSON.stringify(inboundRecords));
+            localStorage.setItem('outboundRecords', JSON.stringify(outboundRecords));
+            
+            // 重置表单
+            document.getElementById('deleteForm').reset();
+            
+            // 更新显示
+            updateStats();
+            renderInventory();
+            renderInboundRecords();
+            renderOutboundRecords();
+            
+            showGlobalAlert('商品及其记录删除成功', 'success');
+        }
+
+        // 处理一键清除所有数据
+        function handleClearAllData() {
+            const password = document.getElementById('clearPassword').value.trim();
+            const operator = document.getElementById('clearOperator').value.trim();
+            
+            // 验证必填项
+            if (!password || !operator) {
+                showGlobalAlert('请填写密码和操作人员', 'danger');
+                return;
+            }
+            
+            // 验证密码
+            if (password !== 'fzj123456FZJ') {
+                showGlobalAlert('密码错误，无法执行清除操作', 'danger');
+                return;
+            }
+            
+            // 验证操作人员 - 必须为"于莉"
+            if (operator !== '于莉') {
+                showGlobalAlert('人员不正确', 'danger');
+                return;
+            }
+            
+            // 确认清除
+            if (!confirm('确定要清除系统中的所有数据吗？包括商品信息、库存数据和出入库记录。此操作不可撤销！')) {
+                return;
+            }
+            
+            // 清除所有数据
+            products = [];
+            inventory = [];
+            inboundRecords = [];
+            outboundRecords = [];
+            
+            // 更新本地存储
+            localStorage.setItem('products', JSON.stringify(products));
+            localStorage.setItem('inventory', JSON.stringify(inventory));
+            localStorage.setItem('inboundRecords', JSON.stringify(inboundRecords));
+            localStorage.setItem('outboundRecords', JSON.stringify(outboundRecords));
+            
+            // 重置表单
+            document.getElementById('clearPassword').value = '';
+            document.getElementById('clearOperator').value = '';
+            
+            // 更新显示
+            updateStats();
+            renderInventory();
+            renderInboundRecords();
+            renderOutboundRecords();
+            
+            showGlobalAlert('系统所有数据已成功清除', 'success');
+        }
+
+        // 打开修改入库记录模态框
+        function openEditInboundModal(recordId) {
+            const record = inboundRecords.find(r => r.id === recordId);
+            if (!record) return;
+            
+            document.getElementById('editInboundId').value = record.id;
+            document.getElementById('editInboundDatetime').value = record.datetime;
+            document.getElementById('editInboundCode').value = record.code;
+            document.getElementById('editInboundName').value = record.name;
+            document.getElementById('editInboundQuantity').value = record.quantity;
+            document.getElementById('editInboundPrice').value = record.price;
+            document.getElementById('editInboundOperator').value = record.operator;
+            
+            document.getElementById('editInboundModal').style.display = 'flex';
+        }
+
+        // 处理修改入库记录提交
+        function handleEditInboundSubmit(e) {
+            e.preventDefault();
+            
+            const recordId = document.getElementById('editInboundId').value;
+            const datetime = document.getElementById('editInboundDatetime').value;
+            const code = document.getElementById('editInboundCode').value.trim();
+            const name = document.getElementById('editInboundName').value.trim();
+            const quantity = parseInt(document.getElementById('editInboundQuantity').value);
+            const price = parseFloat(document.getElementById('editInboundPrice').value);
+            const operator = document.getElementById('editInboundOperator').value.trim();
+            
+            // 验证必填项
+            if (!datetime || !code || !name || quantity < 0 || !price || !operator) {
+                showGlobalAlert('请填写所有必填项，且数量不能为负数', 'danger');
+                return;
+            }
+            
+            // 查找记录
+            const recordIndex = inboundRecords.findIndex(r => r.id === recordId);
+            if (recordIndex === -1) {
+                showGlobalAlert('未找到要修改的记录', 'danger');
+                return;
+            }
+            
+            // 获取原始记录
+            const originalRecord = inboundRecords[recordIndex];
+            const originalQuantity = originalRecord.quantity;
+            const originalPrice = originalRecord.price;
+            const originalTotal = originalRecord.total;
+            
+            // 计算新的总金额
+            const newTotal = quantity * price;
+            
+            // 更新记录
+            inboundRecords[recordIndex] = {
+                ...originalRecord,
+                datetime,
+                quantity,
+                price,
+                total: newTotal,
+                operator
+            };
+            localStorage.setItem('inboundRecords', JSON.stringify(inboundRecords));
+            
+            // 更新库存
+            const inventoryItem = inventory.find(item => item.code === code);
+            if (inventoryItem) {
+                // 计算新的平均价格
+                const totalValue = (inventoryItem.quantity * inventoryItem.price) - originalTotal + newTotal;
+                const totalQuantity = inventoryItem.quantity - originalQuantity + quantity;
+                
+                // 如果总数量为0，则价格为0
+                inventoryItem.price = totalQuantity > 0 ? totalValue / totalQuantity : 0;
+                inventoryItem.quantity = totalQuantity;
+                
+                localStorage.setItem('inventory', JSON.stringify(inventory));
+            }
+            
+            // 关闭模态框
+            document.getElementById('editInboundModal').style.display = 'none';
+            
+            // 更新显示
+            updateStats();
+            renderInventory();
+            renderInboundRecords();
+            
+            showGlobalAlert('入库记录修改成功', 'success');
+        }
+
+        // 打开修改出库记录模态框
+        function openEditOutboundModal(recordId) {
+            const record = outboundRecords.find(r => r.id === recordId);
+            if (!record) return;
+            
+            document.getElementById('editOutboundId').value = record.id;
+            document.getElementById('editOutboundDatetime').value = record.datetime;
+            document.getElementById('editOutboundCode').value = record.code;
+            document.getElementById('editOutboundName').value = record.name;
+            document.getElementById('editOutboundQuantity').value = record.quantity;
+            document.getElementById('editOutboundReceiver').value = record.receiver;
+            document.getElementById('editOutboundOperator').value = record.operator;
+            
+            // 清空修改人员和密码字段
+            document.getElementById('editOutboundModifier').value = '';
+            document.getElementById('editOutboundPassword').value = '';
+            
+            document.getElementById('editOutboundModal').style.display = 'flex';
+        }
+
+        // 处理修改出库记录提交
+        function handleEditOutboundSubmit(e) {
+            e.preventDefault();
+            
+            const recordId = document.getElementById('editOutboundId').value;
+            const datetime = document.getElementById('editOutboundDatetime').value;
+            const code = document.getElementById('editOutboundCode').value.trim();
+            const name = document.getElementById('editOutboundName').value.trim();
+            const quantity = parseInt(document.getElementById('editOutboundQuantity').value);
+            const receiver = document.getElementById('editOutboundReceiver').value.trim();
+            const operator = document.getElementById('editOutboundOperator').value.trim();
+            const modifier = document.getElementById('editOutboundModifier').value.trim();
+            const password = document.getElementById('editOutboundPassword').value;
+            
+            // 验证必填项
+            if (!datetime || !code || !name || quantity < 0 || !receiver || !operator || !modifier || !password) {
+                showGlobalAlert('请填写所有必填项，且数量不能为负数', 'danger');
+                return;
+            }
+            
+            // 验证修改人员 - 必须为"于莉"
+            if (modifier !== '于莉') {
+                showGlobalAlert('人员不正确', 'danger');
+                return;
+            }
+            
+            // 验证密码
+            if (password !== '1234325wer,.www') {
+                showGlobalAlert('密码错误，无法修改出库记录', 'danger');
+                return;
+            }
+            
+            // 查找记录
+            const recordIndex = outboundRecords.findIndex(r => r.id === recordId);
+            if (recordIndex === -1) {
+                showGlobalAlert('未找到要修改的记录', 'danger');
+                return;
+            }
+            
+            // 获取原始记录
+            const originalRecord = outboundRecords[recordIndex];
+            const originalQuantity = originalRecord.quantity;
+            
+            // 检查库存是否充足
+            const inventoryItem = inventory.find(item => item.code === code);
+            if (!inventoryItem) {
+                showGlobalAlert('商品不存在于库存中', 'danger');
+                return;
+            }
+            
+            // 计算新的总金额
+            const newTotal = quantity * inventoryItem.price;
+            
+            // 检查修改后的数量是否会导致库存不足
+            const inventoryChange = originalQuantity - quantity;
+            if (inventoryItem.quantity + inventoryChange < 0) {
+                showGlobalAlert('库存不足，无法完成修改', 'danger');
+                return;
+            }
+            
+            // 更新记录
+            outboundRecords[recordIndex] = {
+                ...originalRecord,
+                datetime,
+                quantity,
+                total: newTotal,
+                receiver,
+                operator
+            };
+            localStorage.setItem('outboundRecords', JSON.stringify(outboundRecords));
+            
+            // 更新库存
+            inventoryItem.quantity += inventoryChange;
+            localStorage.setItem('inventory', JSON.stringify(inventory));
+            
+            // 关闭模态框
+            document.getElementById('editOutboundModal').style.display = 'none';
+            
+            // 更新显示
+            updateStats();
+            renderInventory();
+            renderOutboundRecords();
+            
+            showGlobalAlert('出库记录修改成功', 'success');
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            document.getElementById('productCount').textContent = products.length;
+            
+            const totalValue = inventory.reduce((sum, item) => {
+                return sum + (item.quantity * item.price);
+            }, 0);
+            
+            document.getElementById('totalValue').textContent = `¥${totalValue.toFixed(2)}`;
+        }
+
+        // 渲染库存列表
+        function renderInventory(searchTerm = '') {
+            let filteredInventory = inventory;
+            
+            if (searchTerm) {
+                filteredInventory = inventory.filter(item => 
+                    item.code.includes(searchTerm) || 
+                    item.name.includes(searchTerm) ||
+                    item.category.includes(searchTerm)
+                );
+            }
+            
+            // 按商品编码从小到大排序
+            filteredInventory.sort((a, b) => {
+                // 将编码转换为字符串进行比较
+                const codeA = a.code.toString();
+                const codeB = b.code.toString();
+                return codeA.localeCompare(codeB, 'zh-CN', { numeric: true });
+            });
+            
+            const startIndex = (inventoryCurrentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedInventory = filteredInventory.slice(startIndex, endIndex);
+            
+            const inventoryBody = document.getElementById('inventoryBody');
+            inventoryBody.innerHTML = '';
+            
+            if (paginatedInventory.length === 0) {
+                inventoryBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">暂无库存数据</td></tr>';
+            } else {
+                paginatedInventory.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.code}</td>
+                        <td>${item.name}</td>
+                        <td>${item.category}</td>
+                        <td>${item.unit}</td>
+                        <td>¥${item.price.toFixed(2)}</td>
+                        <td>${item.quantity}</td>
+                        <td>¥${(item.quantity * item.price).toFixed(2)}</td>
+                    `;
+                    inventoryBody.appendChild(row);
+                });
+            }
+            
+            // 更新分页信息
+            const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
+            document.getElementById('inventoryCurrentPage').textContent = inventoryCurrentPage;
+            document.getElementById('inventoryTotalPages').textContent = totalPages;
+            
+            // 更新分页按钮状态
+            document.getElementById('inventoryPrevPage').disabled = inventoryCurrentPage === 1;
+            document.getElementById('inventoryNextPage').disabled = inventoryCurrentPage === totalPages;
+        }
+
+        // 渲染入库记录
+        function renderInboundRecords(searchCode = '', startDate = '', endDate = '') {
+            let filteredRecords = inboundRecords;
+            
+            // 按商品编码过滤
+            if (searchCode) {
+                filteredRecords = filteredRecords.filter(record => 
+                    record.code.includes(searchCode)
+                );
+            }
+            
+            // 按日期范围过滤
+            if (startDate) {
+                filteredRecords = filteredRecords.filter(record => {
+                    const recordDate = record.datetime.split('T')[0];
+                    return recordDate >= startDate;
+                });
+            }
+            
+            if (endDate) {
+                filteredRecords = filteredRecords.filter(record => {
+                    const recordDate = record.datetime.split('T')[0];
+                    return recordDate <= endDate;
+                });
+            }
+            
+            // 按入库日期时间倒序排列
+            filteredRecords.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+            
+            const startIndex = (inboundCurrentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedRecords = filteredRecords.slice(startIndex, endIndex);
+            
+            const inboundBody = document.getElementById('inboundBody');
+            inboundBody.innerHTML = '';
+            
+            if (paginatedRecords.length === 0) {
+                inboundBody.innerHTML = '<tr><td colspan="8" style="text-align: center;">暂无入库记录</td></tr>';
+            } else {
+                paginatedRecords.forEach(record => {
+                    // 格式化日期时间显示
+                    const formattedDatetime = formatDateTime(record.datetime);
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${formattedDatetime}</td>
+                        <td>${record.code}</td>
+                        <td>${record.name}</td>
+                        <td>${record.quantity}</td>
+                        <td>¥${record.price.toFixed(2)}</td>
+                        <td>¥${record.total.toFixed(2)}</td>
+                        <td>${record.operator}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="openEditInboundModal('${record.id}')">修改</button>
+                        </td>
+                    `;
+                    inboundBody.appendChild(row);
+                });
+            }
+            
+            // 更新分页信息
+            const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+            document.getElementById('inboundCurrentPage').textContent = inboundCurrentPage;
+            document.getElementById('inboundTotalPages').textContent = totalPages;
+            
+            // 更新分页按钮状态
+            document.getElementById('inboundPrevPage').disabled = inboundCurrentPage === 1;
+            document.getElementById('inboundNextPage').disabled = inboundCurrentPage === totalPages;
+        }
+
+        // 渲染出库记录
+        function renderOutboundRecords(searchCode = '', startDate = '', endDate = '') {
+            let filteredRecords = outboundRecords;
+            
+            // 按商品编码过滤
+            if (searchCode) {
+                filteredRecords = filteredRecords.filter(record => 
+                    record.code.includes(searchCode)
+                );
+            }
+            
+            // 按日期范围过滤
+            if (startDate) {
+                filteredRecords = filteredRecords.filter(record => {
+                    const recordDate = record.datetime.split('T')[0];
+                    return recordDate >= startDate;
+                });
+            }
+            
+            if (endDate) {
+                filteredRecords = filteredRecords.filter(record => {
+                    const recordDate = record.datetime.split('T')[0];
+                    return recordDate <= endDate;
+                });
+            }
+            
+            // 按出库日期时间倒序排列
+            filteredRecords.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+            
+            const startIndex = (outboundCurrentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedRecords = filteredRecords.slice(startIndex, endIndex);
+            
+            const outboundBody = document.getElementById('outboundBody');
+            outboundBody.innerHTML = '';
+            
+            if (paginatedRecords.length === 0) {
+                outboundBody.innerHTML = '<tr><td colspan="8" style="text-align: center;">暂无出库记录</td></tr>';
+            } else {
+                paginatedRecords.forEach(record => {
+                    // 格式化日期时间显示
+                    const formattedDatetime = formatDateTime(record.datetime);
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${formattedDatetime}</td>
+                        <td>${record.code}</td>
+                        <td>${record.name}</td>
+                        <td>${record.quantity}</td>
+                        <td>¥${record.total.toFixed(2)}</td>
+                        <td>${record.receiver}</td>
+                        <td>${record.operator}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="openEditOutboundModal('${record.id}')">修改</button>
+                        </td>
+                    `;
+                    outboundBody.appendChild(row);
+                });
+            }
+            
+            // 更新分页信息
+            const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+            document.getElementById('outboundCurrentPage').textContent = outboundCurrentPage;
+            document.getElementById('outboundTotalPages').textContent = totalPages;
+            
+            // 更新分页按钮状态
+            document.getElementById('outboundPrevPage').disabled = outboundCurrentPage === 1;
+            document.getElementById('outboundNextPage').disabled = outboundCurrentPage === totalPages;
+        }
+
+        // 格式化日期时间显示
+        function formatDateTime(datetimeStr) {
+            const date = new Date(datetimeStr);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+
+        // 搜索库存
+        function searchInventory() {
+            const searchTerm = document.getElementById('inventorySearch').value.trim();
+            inventoryCurrentPage = 1;
+            renderInventory(searchTerm);
+        }
+
+        // 搜索入库记录
+        function searchInbound() {
+            const searchCode = document.getElementById('inboundSearch').value.trim();
+            const startDate = document.getElementById('inboundStartDate').value;
+            const endDate = document.getElementById('inboundEndDate').value;
+            inboundCurrentPage = 1;
+            renderInboundRecords(searchCode, startDate, endDate);
+        }
+
+        // 搜索出库记录
+        function searchOutbound() {
+            const searchCode = document.getElementById('outboundSearch').value.trim();
+            const startDate = document.getElementById('outboundStartDate').value;
+            const endDate = document.getElementById('outboundEndDate').value;
+            outboundCurrentPage = 1;
+            renderOutboundRecords(searchCode, startDate, endDate);
+        }
+
+        // 改变页码
+        function changePage(type, direction) {
+            if (type === 'inventory') {
+                inventoryCurrentPage += direction;
+                renderInventory(document.getElementById('inventorySearch').value.trim());
+            } else if (type === 'inbound') {
+                const searchCode = document.getElementById('inboundSearch').value.trim();
+                const startDate = document.getElementById('inboundStartDate').value;
+                const endDate = document.getElementById('inboundEndDate').value;
+                inboundCurrentPage += direction;
+                renderInboundRecords(searchCode, startDate, endDate);
+            } else if (type === 'outbound') {
+                const searchCode = document.getElementById('outboundSearch').value.trim();
+                const startDate = document.getElementById('outboundStartDate').value;
+                const endDate = document.getElementById('outboundEndDate').value;
+                outboundCurrentPage += direction;
+                renderOutboundRecords(searchCode, startDate, endDate);
+            }
+        }
+
+        // 导出库存列表
+        function exportInventory() {
+            const searchTerm = document.getElementById('inventorySearch').value.trim();
+            let filteredInventory = inventory;
+            
+            if (searchTerm) {
+                filteredInventory = inventory.filter(item => 
+                    item.code.includes(searchTerm) || 
+                    item.name.includes(searchTerm) ||
+                    item.category.includes(searchTerm)
+                );
+            }
+            
+            // 按商品编码从小到大排序
+            filteredInventory.sort((a, b) => {
+                const codeA = a.code.toString();
+                const codeB = b.code.toString();
+                return codeA.localeCompare(codeB, 'zh-CN', { numeric: true });
+            });
+            
+            const startIndex = (inventoryCurrentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedInventory = filteredInventory.slice(startIndex, endIndex);
+            
+            if (paginatedInventory.length === 0) {
+                showGlobalAlert('没有数据可以导出', 'danger');
+                return;
+            }
+            
+            // 准备数据
+            const data = paginatedInventory.map(item => ({
+                '商品编码': item.code,
+                '商品名称': item.name,
+                '分类': item.category,
+                '单位': item.unit,
+                '单价': item.price,
+                '库存数量': item.quantity,
+                '库存总价值': item.quantity * item.price
+            }));
+            
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(data);
+            
+            // 添加工作表到工作簿
+            XLSX.utils.book_append_sheet(wb, ws, '库存列表');
+            
+            // 导出文件
+            XLSX.writeFile(wb, '库存列表.xlsx');
+            
+            showGlobalAlert('库存列表导出成功', 'success');
+        }
+
+        // 导出入库记录
+        function exportInbound() {
+            const searchCode = document.getElementById('inboundSearch').value.trim();
+            const startDate = document.getElementById('inboundStartDate').value;
+            const endDate = document.getElementById('inboundEndDate').value;
+            
+            let filteredRecords = inboundRecords;
+            
+            // 按商品编码过滤
+            if (searchCode) {
+                filteredRecords = filteredRecords.filter(record => 
+                    record.code.includes(searchCode)
+                );
+            }
+            
+            // 按日期范围过滤
+            if (startDate) {
+                filteredRecords = filteredRecords.filter(record => {
+                    const recordDate = record.datetime.split('T')[0];
+                    return recordDate >= startDate;
+                });
+            }
+            
+            if (endDate) {
+                filteredRecords = filteredRecords.filter(record => {
+                    const recordDate = record.datetime.split('T')[0];
+                    return recordDate <= endDate;
+                });
+            }
+            
+            // 按入库日期时间倒序排列
+            filteredRecords.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+            
+            const startIndex = (inboundCurrentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedRecords = filteredRecords.slice(startIndex, endIndex);
+            
+            if (paginatedRecords.length === 0) {
+                showGlobalAlert('没有数据可以导出', 'danger');
+                return;
+            }
+            
+            // 准备数据
+            const data = paginatedRecords.map(record => ({
+                '入库日期时间': formatDateTime(record.datetime),
+                '商品编码': record.code,
+                '商品名称': record.name,
+                '入库数量': record.quantity,
+                '入库单价': record.price,
+                '总金额': record.total,
+                '操作人员': record.operator
+            }));
+            
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(data);
+            
+            // 添加工作表到工作簿
+            XLSX.utils.book_append_sheet(wb, ws, '入库记录');
+            
+            // 导出文件
+            XLSX.writeFile(wb, '入库记录.xlsx');
+            
+            showGlobalAlert('入库记录导出成功', 'success');
+        }
+
+        // 导出出库记录
+        function exportOutbound() {
+            const searchCode = document.getElementById('outboundSearch').value.trim();
+            const startDate = document.getElementById('outboundStartDate').value;
+            const endDate = document.getElementById('outboundEndDate').value;
+            
+            let filteredRecords = outboundRecords;
+            
+            // 按商品编码过滤
+            if (searchCode) {
+                filteredRecords = filteredRecords.filter(record => 
+                    record.code.includes(searchCode)
+                );
+            }
+            
+            // 按日期范围过滤
+            if (startDate) {
+                filteredRecords = filteredRecords.filter(record => {
+                    const recordDate = record.datetime.split('T')[0];
+                    return recordDate >= startDate;
+                });
+            }
+            
+            if (endDate) {
+                filteredRecords = filteredRecords.filter(record => {
+                    const recordDate = record.datetime.split('T')[0];
+                    return recordDate <= endDate;
+                });
+            }
+            
+            // 按出库日期时间倒序排列
+            filteredRecords.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+            
+            const startIndex = (outboundCurrentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedRecords = filteredRecords.slice(startIndex, endIndex);
+            
+            if (paginatedRecords.length === 0) {
+                showGlobalAlert('没有数据可以导出', 'danger');
+                return;
+            }
+            
+            // 准备数据
+            const data = paginatedRecords.map(record => ({
+                '出库日期时间': formatDateTime(record.datetime),
+                '商品编码': record.code,
+                '商品名称': record.name,
+                '出库数量': record.quantity,
+                '总金额': record.total,
+                '接收人员': record.receiver,
+                '操作人员': record.operator
+            }));
+            
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(data);
+            
+            // 添加工作表到工作簿
+            XLSX.utils.book_append_sheet(wb, ws, '出库记录');
+            
+            // 导出文件
+            XLSX.writeFile(wb, '出库记录.xlsx');
+            
+            showGlobalAlert('出库记录导出成功', 'success');
+        }
+
+        // 生成唯一ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // 显示全局提示信息（在页面最上方）
+        function showGlobalAlert(message, type) {
+            const alertContainer = document.getElementById('globalAlertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            alertContainer.appendChild(alert);
+            
+            // 3秒后自动移除提示
+            setTimeout(() => {
+                alert.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
